@@ -3,7 +3,12 @@ name: CI Feature
 on:
   push:
     branches:
-      - "feature/**"
+      - "**"
+      - develop
+      - main
+
+  pull_request:
+    branches:
       - develop
       - main
 
