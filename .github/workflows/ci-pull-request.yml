@@ -37,4 +37,4 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: |
-          pytest tests -v
+          pytest -v
