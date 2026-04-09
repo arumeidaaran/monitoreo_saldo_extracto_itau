@@ -1,27 +1,23 @@
-name: Promote Develop to Main
+name: Validate Main PR Source
 
 on:
-  push:
+  pull_request:
     branches:
-      - develop
-
-permissions:
-  contents: write
+      - main
+    types:
+      - opened
+      - reopened
+      - ready_for_review
 
 jobs:
-  promote:
-    runs-on: ubuntu-latest
+  validate_source:
+    runs-on: windows-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Merge develop into main
-        uses: devmasx/merge-branch@master
-        with:
-          type: now
-          from_branch: develop
-          target_branch: main
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate source branch
+        shell: pwsh
+        run: |
+          if ("${{ github.head_ref }}" -ne "develop") {
+            Write-Error "main solo acepta Pull Requests desde develop."
+            exit 1
+          }
