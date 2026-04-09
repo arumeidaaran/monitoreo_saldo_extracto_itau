@@ -1,14 +1,11 @@
 name: Auto Merge Pull Request
 
 on:
-  pull_request:
-    branches:
-      - develop
+  workflow_run:
+    workflows:
+      - CI Pull Request
     types:
-      - opened
-      - synchronize
-      - labeled
-      - reopened
+      - completed
 
 permissions:
   contents: write
@@ -16,13 +13,12 @@ permissions:
 
 jobs:
   automerge:
-    if: contains(github.event.pull_request.labels.*.name, 'automerge')
-    runs-on: ubuntu-latest
+    if: >
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: windows-latest
 
     steps:
-      - name: Enable auto-merge
-        uses: peter-evans/enable-pull-request-automerge@v3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          pull-request-number: ${{ github.event.pull_request.number }}
-          merge-method: squash
+      - name: Auto merge PR into develop
+        shell: pwsh
+        run: |
+          Write-Host "CI finalizado con éxito. PR listo para merge automático."
