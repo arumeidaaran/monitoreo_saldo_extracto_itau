@@ -3,7 +3,10 @@ name: Validate Main PR Source
 on:
   push:
     branches:
-      - main
+      - develop
+
+permissions:
+  contents: write
 
 jobs:
   validate_source:
