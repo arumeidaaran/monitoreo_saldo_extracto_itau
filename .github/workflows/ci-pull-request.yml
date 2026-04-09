@@ -1,5 +1,8 @@
 name: CI Pull Request
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   pull_request:
     branches:
@@ -32,9 +35,9 @@ jobs:
       - name: Install CI dependencies
         shell: pwsh
         run: |
-          pip install -r .github/requirements-ci.txt
+          pip install -r ./requirements-ci.txt
 
       - name: Run tests
         shell: pwsh
         run: |
-          pytest tests -v
+          pytest -v
