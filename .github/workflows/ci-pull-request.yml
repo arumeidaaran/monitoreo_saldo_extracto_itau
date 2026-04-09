@@ -5,6 +5,10 @@ on:
     branches:
       - develop
       - main
+    types:
+      - opened
+      - reopened
+      - ready_for_review
 
 jobs:
   validate:
