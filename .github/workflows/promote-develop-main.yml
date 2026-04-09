@@ -1,15 +1,15 @@
-name: Create Release Tag
+name: Promote Develop to Main
 
 on:
   push:
     branches:
-      - main
+      - develop
 
 permissions:
   contents: write
 
 jobs:
-  tag:
+  promote:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,21 +18,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate semantic tag
-        id: tag_version
-        run: |
-          LAST_TAG=$(git tag --sort=-v:refname | head -n 1)
-          if [ -z "$LAST_TAG" ]; then
-            NEW_TAG="v1.0.0"
-          else
-            VERSION=${LAST_TAG#v}
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-            PATCH=$((PATCH + 1))
-            NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
-          fi
-          echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
-
-      - name: Create tag
-        run: |
-          git tag ${{ steps.tag_version.outputs.new_tag }}
-          git push origin ${{ steps.tag_version.outputs.new_tag }}
+      - name: Merge develop into main
+        uses: devmasx/merge-branch@master
+        with:
+          type: now
+          from_branch: develop
+          target_branch: main
+          github_token: ${{ secrets.GITHUB_TOKEN }}
