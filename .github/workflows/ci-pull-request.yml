@@ -19,13 +19,18 @@ jobs:
         with:
           python-version: ${{ vars.PYTHON_VERSION }}
 
-      - name: Install dependencies
+      - name: Install production dependencies
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Install CI dependencies
+        shell: pwsh
+        run: |
+          pip install -r .github/requirements-ci.txt
+
       - name: Run tests
         shell: pwsh
         run: |
-          pytest tests -v
+          python -m pytest tests -v
