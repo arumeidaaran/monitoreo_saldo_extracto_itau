@@ -20,6 +20,7 @@ jobs:
 
       - name: Generate semantic tag
         id: tag_version
+        shell: bash
         run: |
           LAST_TAG=$(git tag --sort=-v:refname | head -n 1)
           if [ -z "$LAST_TAG" ]; then
