@@ -4,6 +4,7 @@ isort
 
 # Test environment
 pytest
+pytest-cov
 
 # PRD environment
 -r requirements.txt
