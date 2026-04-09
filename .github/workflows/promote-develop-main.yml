@@ -1,4 +1,4 @@
-name: Promote Develop to Main
+name: Validate Main PR Source
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  promote:
+  validate_source:
     runs-on: ubuntu-latest
 
     steps:
