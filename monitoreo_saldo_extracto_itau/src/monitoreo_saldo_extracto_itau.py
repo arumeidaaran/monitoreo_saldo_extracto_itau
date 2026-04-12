@@ -1,45 +1,39 @@
 # Nome: ItauAutomacao
-from py_rpautom.python_utils import coletar_pid, finalizar_processo
-from py_rpautom.web_utils import iniciar_navegador
+from py_rpautom.python_utils import cls
 
-from utils.utils import validar_webdriver
+from os import getenv
 
-def entrar_sitio_itau():
-    resultado = {
-        'status': 'done',
-        'reason': '',
-        'data': None
+from utils.pom import entrar_sitio_itau, resolver_login
+
+resultado = {
+    'status': '',
+    'reason': '',
+    'data': None
+}
+
+try:
+    opcion_login = 'AGENCY-ACCOUNT'
+    credenciales = {
+        'agencia': getenv('MONITOREO_SALDO_EXTRACTO_ITAU_AGENCIA_ITAU'),
+        'cuenta': getenv('MONITOREO_SALDO_EXTRACTO_ITAU_CUENTA_ITAU'),
     }
+    contraseñaTeclado = getenv(
+        'MONITOREO_SALDO_EXTRACTO_ITAU_CONTRASENA_ITAU'
+    )
 
-    try:
-        resutlado_validar_webdriver = validar_webdriver(
-            'activo',
-            'chromedriver'
-        )
 
-        if resutlado_validar_webdriver['data']:
-            resultado_coletar_pid = coletar_pid('chromedriver')
-            [
-                finalizar_processo(processo['pid'])
-                for processo in resultado_coletar_pid
-            ]
+    entrar_sitio_itau()
 
-        resultado_iniciar_navegador = iniciar_navegador(
-            url='https://itau.com.br',
-            nome_navegador='chrome',
-            # options=(('--start-maximized'),)
-        )
+    resultado_resolver_login = resolver_login(
+        valor_opcion=opcion_login,
+        credenciales=credenciales,
+    )
+    if resultado_resolver_login['status'] == 'undone':
+        raise RuntimeError(resultado_resolver_login['reason'])
 
-        if resultado_iniciar_navegador == False:
-            resultado['reason'] = 'Error al ejecutar iniciar_navegador'
-            raise RuntimeError(resultado['reason'])
+except Exception as error:
+    resultado['status'] = 'undone'
+    resultado['reason'] = str(error)
 
-        resultado['data'] = resultado_iniciar_navegador
-        resultado['reason'] = 'Función procesada'
-    except Exception as error:
-        resultado['status'] = 'undone'
-
-        if resultado['reason'] == '':
-            resultado['reason'] = str(error)
-
-    return resultado
+cls()
+print(resultado)
