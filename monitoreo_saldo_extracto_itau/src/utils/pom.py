@@ -8,7 +8,7 @@ CSS_SELECTOR = 'css_selector'
 
 _list_opcion_login = ['CPF', 'AGENCY-ACCOUNT']
 
-def entrar_sitio_itau():
+def entrar_sitio_itau(pantalla_intera: bool):
     resultado = {
         'status': '',
         'reason': '',
@@ -28,10 +28,14 @@ def entrar_sitio_itau():
                 for processo in resultado_coletar_pid
             ]
 
+        options = None
+        if pantalla_intera:
+            options=(('--start-maximized'),)
+
         resultado_iniciar_navegador = iniciar_navegador(
             url='https://itau.com.br',
             nome_navegador='chrome',
-            options=(('--start-maximized'),)
+            options=options,
         )
 
         if resultado_iniciar_navegador == False:
@@ -159,7 +163,7 @@ def hacerLogin(valor_opcion: str, credenciales: dict[str, str]):
                     raise RuntimeError(resultado_login_por_CPF['reason'])
 
             case 'AGENCY-ACCOUNT':
-                if not credenciales.get('AGENCIA'):
+                if not credenciales.get('agencia'):
                     raise ValueError('credenciales no contiene agencia')
 
                 if not credenciales.get('cuenta'):
