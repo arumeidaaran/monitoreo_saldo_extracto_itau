@@ -43,6 +43,7 @@ def entrar_sitio_itau(pantalla_intera: bool):
             raise RuntimeError(resultado['reason'])
 
         resultado['data'] = resultado_iniciar_navegador
+        resultado['status'] = 'done'
         resultado['reason'] = 'Función procesada'
     except Exception as error:
         resultado['status'] = 'undone'
