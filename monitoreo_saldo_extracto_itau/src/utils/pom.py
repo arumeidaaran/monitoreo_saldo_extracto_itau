@@ -175,6 +175,44 @@ def acceder_pagina_login():
     return resultado
 
 
+def colectar_campo_valor_extrato():
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        paragrafo_valor_saldo_selector = 'p[id="saldo"]'
+        paragrafo_valor_saldo = aguardar_elemento(
+            identificador=paragrafo_valor_saldo_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )        
+        if paragrafo_valor_saldo == '':
+            resultado['reason'] = (
+                'No apareció el valor de dinero de la cuenta '
+                'en la pantalla principal'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        paragrafo_valor_saldo_texto = extrair_texto(
+            seletor=paragrafo_valor_saldo_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+
+        resultado['data'] = (
+            paragrafo_valor_saldo_texto.replace('R$', '').strip()
+        )
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesado'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
+
+
 def elegir_opcion_seleccion(valor_opcion):
     resultado = {
         'status': '',
