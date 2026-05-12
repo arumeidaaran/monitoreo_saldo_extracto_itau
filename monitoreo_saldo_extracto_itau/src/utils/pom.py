@@ -20,6 +20,64 @@ CSS_SELECTOR = 'css_selector'
 
 _list_opcion_login = ['CPF', 'AGENCY-ACCOUNT']
 
+def acceder_elemento_menu_saldo_e_extrato():
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        validacion_menu_saldo_e_extrato = False
+        contaje = 0
+        contaje_total = 3
+        while (
+            (validacion_menu_saldo_e_extrato is False)
+            and (contaje < contaje_total)
+        ):
+        
+            try:
+                esperar_loading(salir = True, tiempoLimite = 30)
+                validar_menu_principal()
+                acceder_menu_principal()
+            except Exception as error:
+                print(error)
+                breakpoint()
+
+            link_saldo_e_extrato_selector = (
+                '(//li[@class="titulo "])[1]/following-sibling::li/'
+                'a[contains(text(), "saldo e extrato")]'
+            )
+            link_saldo_e_extrato = aguardar_elemento(
+                identificador=link_saldo_e_extrato_selector,
+                tipo_elemento=XPATH,
+                tempo=5,
+            )
+            if link_saldo_e_extrato:
+                validacion_menu_saldo_e_extrato = True
+
+            contaje = contaje + 1
+
+        if not link_saldo_e_extrato:
+            resultado['reason'] = (
+                'No apareció el elemento de menu Saldo e Extrato'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        clicar_elemento(
+            seletor=link_saldo_e_extrato_selector,
+            tipo_elemento=XPATH,
+        )
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
+
 
 def acceder_pagina_login():
     resultado = {
