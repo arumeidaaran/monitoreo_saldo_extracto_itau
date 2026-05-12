@@ -110,6 +110,37 @@ def acceder_menu_principal():
 
     return resultado
 
+
+def validar_menu_principal():
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        nav_menu_principal_selector = (
+            '(//nav[@class="menu left"]//a)[1]/span'
+        )
+
+        nav_menu_principal = aguardar_elemento(
+            identificador=nav_menu_principal_selector,
+            tipo_elemento=XPATH,
+        )
+        if not nav_menu_principal:
+            resultado['reason'] = "No apareció el menu principal"
+
+            raise SystemError(resultado['reason'])
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
+
+
 def acceder_pagina_login():
     resultado = {
         'status': '',
