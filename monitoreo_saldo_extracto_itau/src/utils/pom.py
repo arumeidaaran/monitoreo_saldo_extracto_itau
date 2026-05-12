@@ -79,6 +79,37 @@ def acceder_elemento_menu_saldo_e_extrato():
     return resultado
 
 
+def acceder_menu_principal():
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        nav_menu_principal_selector = (
+            '(//nav[@class="menu left"]//a)[1]/span'
+        )
+
+        resultado_nav_menu_principal = clicar_elemento(
+            seletor=nav_menu_principal_selector,
+            tipo_elemento=XPATH,
+        )
+        if not resultado_nav_menu_principal:
+            resultado['reason'] = (
+                'Error al intentar acceder el menu principal'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
+
 def acceder_pagina_login():
     resultado = {
         'status': '',
