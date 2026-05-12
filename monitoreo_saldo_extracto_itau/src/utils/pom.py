@@ -729,3 +729,41 @@ def validar_campo_valor_extrato_existe(tiempo_limite: int = 5):
         resultado['reason'] = str(error)
 
     return resultado
+
+
+def colectar_extrato():
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        div_valor_saldo_selector = 'div[id="cor-valor-saldo-box"]'
+        div_valor_saldo = aguardar_elemento(
+            identificador=div_valor_saldo_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+        if not div_valor_saldo:
+            resultado['reason'] = (
+                "No apareció el valor de dinero de la " +
+                "cuenta en la pantalla Saldo e Extrato"
+            )
+
+            raise SystemError(resultado['reason'])
+
+        resultado_div_valor_saldo = extrair_texto(
+            seletor=div_valor_saldo_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+
+        resultado['data'] = (
+            resultado_div_valor_saldo.replace('R$', '').strip()
+        )
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Função procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
