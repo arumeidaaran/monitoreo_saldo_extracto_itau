@@ -701,3 +701,31 @@ def resolver_contraseña(contraseña):
         resultado['reason'] = str(error)
 
     return resultado
+
+
+def validar_campo_valor_extrato_existe(tiempo_limite: int = 5):
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        paragrafo_valor_saldo_selector = 'p[id="saldo"]'
+        paragrafo_valor_saldo = aguardar_elemento(
+            identificador=paragrafo_valor_saldo_selector,
+            tipo_elemento=CSS_SELECTOR,
+            tempo=tiempo_limite,
+        )
+
+        resultado['data'] = False
+        if paragrafo_valor_saldo:
+            resultado['data'] = True
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
