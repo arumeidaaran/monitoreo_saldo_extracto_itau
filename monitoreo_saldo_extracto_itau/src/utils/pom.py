@@ -1,7 +1,19 @@
+from time import sleep
+
 from py_rpautom.python_utils import coletar_pid, finalizar_processo
-from py_rpautom.web_utils import clicar_elemento, escrever_em_elemento, iniciar_navegador, limpar_campo, selecionar_elemento
+from py_rpautom.web_utils import (
+    aguardar_elemento,
+    clicar_elemento,
+    coletar_atributo,
+    escrever_em_elemento,
+    extrair_texto,
+    iniciar_navegador,
+    limpar_campo,
+    selecionar_elemento,
+)
 
 from utils.utils import validar_webdriver
+
 
 XPATH = 'xpath'
 CSS_SELECTOR = 'css_selector'
