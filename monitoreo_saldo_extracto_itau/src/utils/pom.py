@@ -290,6 +290,44 @@ def entrar_sitio_itau(pantalla_intera: bool):
     return resultado
 
 
+def esperar_loading(salir = True, tiempoLimite = 60):
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        elemento_carregando_selector = '//*[@*="Carregando" or @*="carregando"]'
+        contaje = 0
+        validar_elemento_carregando = salir
+        while (
+            (validar_elemento_carregando == salir) and
+            (contaje < tiempoLimite)
+        ):
+            validar_elemento_carregando = aguardar_elemento(
+                identificador=elemento_carregando_selector,
+                tempo=1,
+                tipo_elemento=XPATH,
+            )
+
+            contaje = contaje + 1
+
+        if (contaje == tiempoLimite):
+            resultado['reason'] = 'Se acabó el tiempo esperando loading'
+
+            raise SystemError(resultado['reason'])            
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
+
+
+
 def hacer_login(valor_opcion: str, credenciales: dict[str, str]):
     resultado = {
         'status': '',
