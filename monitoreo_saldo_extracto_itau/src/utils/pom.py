@@ -540,3 +540,88 @@ def resolver_login(valor_opcion: str, credenciales: dict[str, str]):
         resultado['reason'] = str(error)
 
     return resultado
+
+
+def resolver_token(tiempo_limite = 180):
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        div_pantalla_iToken_app_selector = 'div[class="itoken-info"]'
+        pantalla_iToken_app = aguardar_elemento(
+            identificador=div_pantalla_iToken_app_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+
+        if not pantalla_iToken_app:
+            resultado['reason'] = (
+                'No apareció la opción de validar '
+                'el iToken de Itaú'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        validacion_token = False
+        contaje = 0
+        valor_iToken = ''
+        while (validacion_token == False and contaje < tiempo_limite):
+            valor_iToken = input('Digite tu iToken en el sítio Itaú: ')
+
+            if (
+                (not valor_iToken == '') and
+                (len(valor_iToken) == 6)
+            ):
+                validacion_token = True
+
+            contaje = contaje + 1
+            sleep(1)
+
+        lista_valor_iToken = list(valor_iToken)
+        for indice_iToken in range(1, 7):
+            input_password_iToken = (
+                '(//input[@type="password"]'
+                f'[@maxlength="1"])[{indice_iToken}]'
+            )
+
+            escrever_em_elemento(
+                seletor=input_password_iToken,
+                texto=lista_valor_iToken.pop(0),
+                tipo_elemento=XPATH,
+            )
+
+        link_continuar_iToken_selector = '//a[@id="app-codigoOk"]'
+
+        validacion_link_continuar_iToken = coletar_atributo(
+            seletor=link_continuar_iToken_selector,
+            atributo='disabled',
+            tipo_elemento=XPATH,
+        )
+        if validacion_link_continuar_iToken:
+            resultado['reason'] = (
+                'No se pude identificar el '
+                f'butón continuar activo después del iToken completado.'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        link_continuar_iToken = clicar_elemento(
+            seletor=link_continuar_iToken_selector,
+            tipo_elemento=XPATH,
+        )
+        if (not link_continuar_iToken):
+            resultado['reason'] = (
+                'Erorr al hacer clik en link_continuar_iToken'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
