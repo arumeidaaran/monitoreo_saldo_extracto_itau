@@ -36,13 +36,9 @@ def acceder_elemento_menu_saldo_e_extrato():
             and (contaje < contaje_total)
         ):
         
-            try:
-                esperar_loading(salir = True, tiempoLimite = 30)
-                validar_menu_principal()
-                acceder_menu_principal()
-            except Exception as error:
-                print(error)
-                breakpoint()
+            esperar_loading(salir = True, tiempoLimite = 30)
+            validar_menu_principal()
+            acceder_menu_principal()
 
             link_saldo_e_extrato_selector = (
                 '(//li[@class="titulo "])[1]/following-sibling::li/'
