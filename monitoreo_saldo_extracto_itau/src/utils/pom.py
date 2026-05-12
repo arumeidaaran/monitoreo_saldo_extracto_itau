@@ -327,6 +327,55 @@ def esperar_loading(salir = True, tiempoLimite = 60):
     return resultado
 
 
+def habilitar_campo_valor_extrato():
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+    try:
+        button_extrato_da_conta_selector = (
+            'button[id="saldo-extrato-card-accordion"]'
+        )
+
+        button_extrato_da_conta_ = aguardar_elemento(
+            identificador=button_extrato_da_conta_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+        if not button_extrato_da_conta_:
+            resultado['reason'] = (
+                'No apareció el campo de dinero de la cuenta'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        clicar_elemento(
+            seletor=button_extrato_da_conta_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+
+        esperar_loading(salir = True, tiempoLimite = 30)
+
+        paragrafo_valor_saldo_selector = 'p[id="saldo"]'
+        paragrafo_valor_saldo = aguardar_elemento(
+            identificador=paragrafo_valor_saldo_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+        if not paragrafo_valor_saldo:
+            resultado['reason'] = (
+                'No apareció el valor de dinero de la cuenta '
+                'en la pantalla principal'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+    return resultado
+
 
 def hacer_login(valor_opcion: str, credenciales: dict[str, str]):
     resultado = {
