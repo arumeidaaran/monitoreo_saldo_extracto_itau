@@ -625,3 +625,79 @@ def resolver_token(tiempo_limite = 180):
         resultado['reason'] = str(error)
 
     return resultado
+
+
+def resolver_contraseña(contraseña):
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        input_pantalla_contraseña_teclado_selector = (
+            'input[aria-label="senha de acesso"]'
+        )
+        pantalla_contraseña_teclado = aguardar_elemento(
+            identificador=input_pantalla_contraseña_teclado_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+
+        if not pantalla_contraseña_teclado:
+            resultado['reason'] = (
+                "No apareció la opción de validar la contraseña de Itaú"
+            )
+
+            raise SystemError(resultado['reason'])
+
+        for numero in range(0, len(contraseña)):
+            link_teclas_teclado_virtual_selector = (
+                '//div[@class="teclas clearfix"]/'
+                f'a[contains(text(), "{contraseña[numero]}")]'
+            )
+
+            clicar_elemento(
+                seletor=link_teclas_teclado_virtual_selector,
+                tipo_elemento=XPATH,
+            )
+
+            sleep(1)
+
+        validacion_pantalla_contraseña_teclado = coletar_atributo(
+            seletor=input_pantalla_contraseña_teclado_selector,
+            atributo='value',
+            tipo_elemento=CSS_SELECTOR,
+        )
+        if (
+            (
+                validacion_pantalla_contraseña_teclado.upper() ==
+                'SENHA DE ACESSO'
+            )
+            or (not len(
+                validacion_pantalla_contraseña_teclado
+            ) == len(contraseña))
+        ):
+            resultado['reason'] = 'Ocurrió un error al digitar la contraseña.'
+
+            raise SystemError(resultado['reason'])
+
+        acesar_en_teclado_virtual_boton_selector = 'a[aria-label="acessar"]'
+        acesar_en_teclado_virtual_boton = clicar_elemento(
+            seletor=acesar_en_teclado_virtual_boton_selector,
+            tipo_elemento=CSS_SELECTOR,
+        )
+        if not acesar_en_teclado_virtual_boton:
+            resultado['reason'] = (
+                'Ocurrió un error al hacer clic en '
+                'acesar_en_teclado_virtual_boton'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesado'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
