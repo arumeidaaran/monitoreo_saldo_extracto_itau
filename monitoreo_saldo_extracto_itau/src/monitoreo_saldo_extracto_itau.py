@@ -1,8 +1,14 @@
 # Nome: ItauAutomacao
 from py_rpautom.python_utils import cls
-
 from os import getenv
+import re
 
+from utils.graph_mail_service import (
+    definir_contenido_email,
+    definir_destinatarios_email,
+    obtener_variable_entorno_por_powershell,
+    send_mail,
+)
 from utils.pom import (
     acceder_elemento_menu_saldo_e_extrato,
     colectar_campo_valor_extrato,
@@ -15,6 +21,7 @@ from utils.pom import (
     validar_campo_valor_extrato_existe,
     habilitar_campo_valor_extrato,
 )
+
 
 def ejecutar_flujo():
     resultado = {
@@ -58,6 +65,54 @@ def ejecutar_flujo():
             )
 
             raise SystemError(resultado['reason'])
+
+        
+        resultado_client_id = obtener_variable_entorno_por_powershell(
+            nombre = 'SERVICIO_DE_CORREO_DE_PYTHON_CLIENT_ID',
+        )
+
+        if resultado_client_id['status'] == 'undone':
+            raise RuntimeError(resultado_client_id['reason'])
+
+        if not resultado_client_id['data']:
+            raise RuntimeError(
+                'client_id vacío, revise las variables de entorno.'
+            )
+
+        client_id = resultado_client_id['data']
+
+        resultado_client_secret = obtener_variable_entorno_por_powershell(
+            nombre = 'SERVICIO_DE_CORREO_DE_PYTHON_CLIENT_SECRET'
+        )
+
+        if resultado_client_secret['status'] == 'undone':
+            raise RuntimeError(resultado_client_secret['reason'])
+
+        if not resultado_client_secret['data']:
+            raise RuntimeError(
+                'client_secret vacío, revise las variables de entorno.'
+            )
+
+        client_secret = resultado_client_secret['data']
+
+        lista_correos = (
+            'arumeidaaran@outlook.com',
+            't1801lln@hotmail.com',
+        )
+
+        destinatarios = definir_destinatarios_email(lista_correos)
+        if destinatarios['status'] == 'undone':
+            raise RuntimeError(destinatarios['reason'])
+
+        contenido_email_html_original = '''
+            <h1>Hubo modificación en tu cuenta</h1>
+
+            <p>
+            texto_contenido_email
+            </p>
+        '''
+        
+        titulo_email = 'Correo automático'
 
         entrar_sitio_itau(False)
 
@@ -123,9 +178,20 @@ def ejecutar_flujo():
 
                 resultado_colectar_extrato = colectar_extrato()
                 if resultado_colectar_extrato['status'] == 'undone':
-                    raise RuntimeError(
-                        resultado_colectar_extrato['reason']
+                    resultado_esperar_loading = esperar_loading(
+                        salir = True,
+                        tiempoLimite = 30,
                     )
+                    if resultado_esperar_loading['status'] == 'undone':
+                        raise RuntimeError(
+                            resultado_colectar_extrato['reason']
+                        )
+
+                    resultado_colectar_extrato = colectar_extrato()
+                    if resultado_colectar_extrato['status'] == 'undone':
+                        raise RuntimeError(
+                            resultado_colectar_extrato['reason']
+                        )
 
                 if not (
                     valor_extrato ==
@@ -133,7 +199,42 @@ def ejecutar_flujo():
                 ):
                     valor_extrato = resultado_colectar_extrato['data']
 
-                    print('Enviar e-mail')
+                    texto_contenido_email = f'''
+                    <b>Saldo anterior:</b>
+                        {resultado_colectar_campo_valor_extrato['data']}
+                    <br/>
+                    <b>Saldo nuevo:</b>
+                        {resultado_colectar_extrato['data']}
+                    '''
+
+                    contenido_email_html = (
+                        contenido_email_html_original.replace(
+                            'texto_contenido_email',
+                            texto_contenido_email,
+                        )
+                    )
+                    contenido_limpio = re.sub(
+                        r'\s+', ' ',
+                        contenido_email_html
+                    ).strip()
+
+                    body_email = definir_contenido_email(
+                        'HTML',
+                        contenido_limpio,
+                    )
+                    if body_email['status'] == 'undone':
+                        raise RuntimeError(body_email['reason'])
+
+                    resultado_send_mail = send_mail(
+                        destinatarios=destinatarios['data'],
+                        subject_email=titulo_email,
+                        body_email=body_email['data'],
+                        client_id=client_id,
+                        client_secret=client_secret,
+                        attachments=None,
+                    )
+                    if resultado_send_mail['status'] == 'undone':
+                        raise RuntimeError(resultado_send_mail['reason'])
             except KeyboardInterrupt:
                 print("Interrumpido por el usuario")
                 break
