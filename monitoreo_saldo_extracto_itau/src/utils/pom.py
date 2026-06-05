@@ -9,6 +9,7 @@ from py_rpautom.web_utils import (
     extrair_texto,
     iniciar_navegador,
     limpar_campo,
+    maximizar_janela,
     selecionar_elemento,
 )
 
@@ -20,6 +21,7 @@ CSS_SELECTOR = 'css_selector'
 
 _list_opcion_login = ['CPF', 'AGENCY-ACCOUNT']
 
+
 def acceder_elemento_menu_saldo_e_extrato():
     resultado = {
         'status': '',
@@ -28,32 +30,33 @@ def acceder_elemento_menu_saldo_e_extrato():
     }
 
     try:
-        validacion_menu_saldo_e_extrato = False
-        contaje = 0
-        contaje_total = 3
-        while (
-            (validacion_menu_saldo_e_extrato is False)
-            and (contaje < contaje_total)
-        ):
-        
-            esperar_loading(salir = True, tiempoLimite = 30)
-            validar_menu_principal()
-            acceder_menu_principal()
+        esperar_loading(salir = True, tiempoLimite = 30)
 
-            link_saldo_e_extrato_selector = (
-                '(//li[@class="titulo "])[1]/following-sibling::li/'
-                'a[contains(text(), "saldo e extrato")]'
+        resultado_validar_menu_principal = validar_menu_principal()
+        if resultado_validar_menu_principal['status'] == 'undone':
+            resultado['reason'] = (
+                'No apareció el menu principal.'
             )
-            link_saldo_e_extrato = aguardar_elemento(
-                identificador=link_saldo_e_extrato_selector,
-                tipo_elemento=XPATH,
-                tempo=5,
+
+            raise SystemError(resultado['reason'])
+
+        resultado_acceder_menu_principal = acceder_menu_principal()
+        if resultado_acceder_menu_principal['status'] == 'undone':
+            resultado['reason'] = (
+                'No fue posible hacer clic en el menu principal.'
             )
-            if link_saldo_e_extrato:
-                validacion_menu_saldo_e_extrato = True
 
-            contaje = contaje + 1
+            raise SystemError(resultado['reason'])
 
+        link_saldo_e_extrato_selector = (
+            '(//li[@class="titulo "])[1]/following-sibling::li/'
+            'a[contains(text(), "saldo e extrato")]'
+        )
+        link_saldo_e_extrato = aguardar_elemento(
+            identificador=link_saldo_e_extrato_selector,
+            tipo_elemento=XPATH,
+            tempo=10,
+        )
         if not link_saldo_e_extrato:
             resultado['reason'] = (
                 'No apareció el elemento de menu Saldo e Extrato'
@@ -66,6 +69,7 @@ def acceder_elemento_menu_saldo_e_extrato():
             tipo_elemento=XPATH,
         )
 
+        resultado['data'] = True
         resultado['status'] = 'done'
         resultado['reason'] = 'Función procesada'
     except Exception as error:
@@ -105,6 +109,50 @@ def acceder_menu_principal():
         resultado['reason'] = str(error)
 
     return resultado
+
+
+def aprobar_cookies() :
+    result = {
+        'status': '',
+        'reason': '',
+        'data': None,
+    }
+
+    try:
+        elemento_raiz_selector = (
+            'itau-cookie-consent-banner[segment="varejo"]'
+        )
+        elemento_escondido_selector = (
+            'button[id="itau-cookie-consent-banner-accept-cookies-btn"]'
+        )
+
+        aceptar_cookies_button = aguardar_elemento(
+            identificador=elemento_escondido_selector,
+            tipo_elemento=CSS_SELECTOR,
+            elemento_shadowroot=elemento_raiz_selector,
+            tipo_elemento_shadowroot=CSS_SELECTOR,
+            tempo=1,
+        )
+
+        if not aceptar_cookies_button:
+            raise RuntimeError(
+                'No se pudo encontrar el botón de aprobación de cookies.'
+            )
+
+        clicar_elemento(
+            seletor=elemento_escondido_selector,
+            tipo_elemento=CSS_SELECTOR,
+            elemento_shadowroot=elemento_raiz_selector,
+            tipo_elemento_shadowroot=CSS_SELECTOR,
+        )
+
+        result['status'] = 'done'
+        result['reason'] = 'função processada'
+    except Exception as error:
+        result['status'] = 'undone'
+        result['reason'] = str(error)
+    
+    return result
 
 
 def validar_menu_principal():
@@ -260,15 +308,13 @@ def entrar_sitio_itau(pantalla_intera: bool):
                 for processo in resultado_coletar_pid
             ]
 
-        options = None
-        if pantalla_intera:
-            options=(('--start-maximized'),)
-
         resultado_iniciar_navegador = iniciar_navegador(
             url='https://itau.com.br',
             nome_navegador='chrome',
-            options=options,
         )
+
+        if pantalla_intera:
+            maximizar_janela()
 
         if resultado_iniciar_navegador == False:
             resultado['reason'] = 'Error al ejecutar iniciar_navegador'
@@ -312,7 +358,7 @@ def esperar_loading(salir = True, tiempoLimite = 60):
         if (contaje == tiempoLimite):
             resultado['reason'] = 'Se acabó el tiempo esperando loading'
 
-            raise SystemError(resultado['reason'])            
+            raise SystemError(resultado['reason'])
 
         resultado['status'] = 'done'
         resultado['reason'] = 'Función procesada'
@@ -450,10 +496,12 @@ def login_por_agencia_cuenta(credenciales: dict[str, str]):
             tipo_elemento=CSS_SELECTOR,
         )
 
-        button_acesar_en_login_selector = 'button[aria-label="Acessar"]'
+        button_acesar_en_login_selector = (
+            '//button[contains(@class, "idl-more-access-submit-button")]'
+        )
         button_acesar_en_login = clicar_elemento(
             seletor=button_acesar_en_login_selector,
-            tipo_elemento=CSS_SELECTOR,
+            tipo_elemento=XPATH,
         )
         if (not button_acesar_en_login):
             resultado['reason'] = (
