@@ -1,4 +1,4 @@
-# Nome: ItauAutomacao
+# Nome: monitoreo_saldo_extracto_itau
 from py_rpautom.python_utils import cls
 from os import getenv
 import re
@@ -11,6 +11,7 @@ from utils.graph_mail_service import (
 )
 from utils.pom import (
     acceder_elemento_menu_saldo_e_extrato,
+    aprobar_cookies,
     colectar_campo_valor_extrato,
     colectar_extrato,
     entrar_sitio_itau,
@@ -111,10 +112,14 @@ def ejecutar_flujo():
             texto_contenido_email
             </p>
         '''
-        
+
         titulo_email = 'Correo automático'
 
-        entrar_sitio_itau(False)
+        entrar_sitio_itau(pantalla_intera=True)
+
+        resultado_aprobar_cookies = aprobar_cookies()
+        if resultado_aprobar_cookies['status'] == 'undone':
+            raise RuntimeError(resultado_aprobar_cookies['reason'])
 
         resultado_resolver_login = resolver_login(
             valor_opcion=opcion_login,
@@ -160,14 +165,33 @@ def ejecutar_flujo():
 
         while True:
             try:
-                resultado_acceder_elemento_menu_saldo_e_extrato = (
-                    acceder_elemento_menu_saldo_e_extrato()
-                )
-                if (
-                    resultado_acceder_elemento_menu_saldo_e_extrato[
-                        'status'
-                    ] == 'undone'
+                validacion_menu_saldo_e_extrato = False
+                contaje = 0
+                contaje_total = 10
+                while (
+                    (validacion_menu_saldo_e_extrato is False)
+                    and (contaje < contaje_total)
                 ):
+                    resultado_acceder_elemento_menu_saldo_e_extrato = (
+                        acceder_elemento_menu_saldo_e_extrato()
+                    )
+                    if resultado_acceder_elemento_menu_saldo_e_extrato[
+                        'data'
+                    ]:
+                        validacion_menu_saldo_e_extrato = True
+
+                    contaje = contaje + 1
+
+                if not validacion_menu_saldo_e_extrato:
+                    resultado['reason'] = (
+                        'No apareció el elemento de menu Saldo e Extrato'
+                    )
+
+                    raise SystemError(resultado['reason'])
+
+                if resultado_acceder_elemento_menu_saldo_e_extrato[
+                    'status'
+                ] == 'undone':
                     raise RuntimeError(
                         resultado_acceder_elemento_menu_saldo_e_extrato[
                             'reason'
@@ -197,15 +221,15 @@ def ejecutar_flujo():
                     valor_extrato ==
                     resultado_colectar_extrato['data']
                 ):
-                    valor_extrato = resultado_colectar_extrato['data']
-
                     texto_contenido_email = f'''
                     <b>Saldo anterior:</b>
-                        {resultado_colectar_campo_valor_extrato['data']}
+                        {valor_extrato}
                     <br/>
                     <b>Saldo nuevo:</b>
                         {resultado_colectar_extrato['data']}
                     '''
+
+                    valor_extrato = resultado_colectar_extrato['data']
 
                     contenido_email_html = (
                         contenido_email_html_original.replace(
@@ -239,6 +263,8 @@ def ejecutar_flujo():
                 print("Interrumpido por el usuario")
                 break
             except Exception as error:
+                print(error)
+                breakpoint()
                 raise error
 
         resultado['status'] = 'done'
