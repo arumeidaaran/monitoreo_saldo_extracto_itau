@@ -1,7 +1,10 @@
 # Nome: monitoreo_saldo_extracto_itau
-from py_rpautom.python_utils import cls
+from datetime import datetime
 from os import getenv
+from pathlib import Path
 import re
+
+from py_rpautom.python_utils import cls
 
 from utils.graph_mail_service import (
     definir_contenido_email,
@@ -10,17 +13,21 @@ from utils.graph_mail_service import (
     send_mail,
 )
 from utils.pom import (
+    acceder_elemento_menu_detran,
     acceder_elemento_menu_saldo_e_extrato,
     aprobar_cookies,
+    capturar_ventana_en_imagen,
     colectar_campo_valor_extrato,
     colectar_extrato,
     entrar_sitio_itau,
     esperar_loading,
+    hacer_clic_ayuda,
     resolver_contraseña,
     resolver_login,
     resolver_token,
     validar_campo_valor_extrato_existe,
     habilitar_campo_valor_extrato,
+    hacer_clic_logo,
 )
 
 
@@ -30,6 +37,9 @@ def ejecutar_flujo():
         'reason': '',
         'data': None
     }
+
+    inicio_navegador = False
+    detenido_por_usuario = False
 
     try:
         valor_extrato = '0,00'
@@ -115,7 +125,11 @@ def ejecutar_flujo():
 
         titulo_email = 'Correo automático'
 
-        entrar_sitio_itau(pantalla_intera=True)
+        resultado_entrar_sitio_itau = entrar_sitio_itau(pantalla_intera=True)
+        if not resultado_entrar_sitio_itau['data']:
+            raise RuntimeError(resultado_entrar_sitio_itau)
+
+        inicio_navegador = True
 
         resultado_aprobar_cookies = aprobar_cookies()
         if resultado_aprobar_cookies['status'] == 'undone':
@@ -131,6 +145,8 @@ def ejecutar_flujo():
         resultado_resolver_token = resolver_token()
         if resultado_resolver_token['status'] == 'undone':
             raise RuntimeError(resultado_resolver_token['reason'])
+
+        cls()
 
         resultado_resolver_contraseña = resolver_contraseña(contraseñaTeclado)
         if resultado_resolver_contraseña['status'] == 'undone':
@@ -211,15 +227,72 @@ def ejecutar_flujo():
                             resultado_colectar_extrato['reason']
                         )
 
-                    resultado_colectar_extrato = colectar_extrato()
-                    if resultado_colectar_extrato['status'] == 'undone':
-                        raise RuntimeError(
-                            resultado_colectar_extrato['reason']
+                    validacion_menu_detran = False
+                    contaje = 0
+                    contaje_total = 10
+                    while (
+                        (validacion_menu_detran is False)
+                        and (contaje < contaje_total)
+                    ):
+                        resultado_acceder_elemento_menu_detran = (
+                            acceder_elemento_menu_detran()
                         )
 
-                if not (
-                    valor_extrato ==
-                    resultado_colectar_extrato['data']
+                        if resultado_acceder_elemento_menu_detran[
+                            'data'
+                        ]:
+                            validacion_menu_detran = True
+
+                        contaje = contaje + 1
+
+                    if resultado_acceder_elemento_menu_detran['status'] == 'undone':
+                        raise SystemError(
+                            resultado_acceder_elemento_menu_detran['reason']
+                        )
+
+                    resultado_esperar_loading = esperar_loading(
+                        salir = True,
+                        tiempoLimite = 30,
+                    )
+                    if resultado_esperar_loading['status'] == 'undone':
+                        raise RuntimeError(
+                            resultado_acceder_elemento_menu_detran['reason']
+                        )
+
+                    resultado_hacer_clic_logo = hacer_clic_ayuda(
+                        cambiar_contexto=True,
+                    )
+                    if resultado_hacer_clic_logo['status'] == 'undone':
+                        raise RuntimeError(
+                            resultado_hacer_clic_logo['reason']
+                        )
+
+                    resultado_hacer_clic_logo = hacer_clic_logo(
+                        cambiar_contexto=True,
+                    )
+                    if resultado_hacer_clic_logo['status'] == 'undone':
+                        raise RuntimeError(
+                            resultado_hacer_clic_logo['reason']
+                        )
+
+                    resultado_esperar_loading = esperar_loading(
+                        salir = True,
+                        tiempoLimite = 30,
+                    )
+                    if resultado_esperar_loading['status'] == 'undone':
+                        raise RuntimeError(
+                            resultado_hacer_clic_logo['reason']
+                        )
+
+                    print('Se restabeleció la conexión con detran, ayuda y logo')
+
+                if (
+                    valor_extrato
+                    and resultado_colectar_extrato['data']
+                    and not (
+                        valor_extrato ==
+                        resultado_colectar_extrato['data']
+                    )
                 ):
                     texto_contenido_email = f'''
                     <b>Saldo anterior:</b>
@@ -260,18 +333,46 @@ def ejecutar_flujo():
                     if resultado_send_mail['status'] == 'undone':
                         raise RuntimeError(resultado_send_mail['reason'])
             except KeyboardInterrupt:
-                print("Interrumpido por el usuario")
-                break
-            except Exception as error:
-                print(error)
-                breakpoint()
-                raise error
+                resultado['status'] = 'undone'
+                resultado['reason'] = "Interrumpido por el usuario"
 
-        resultado['status'] = 'done'
-        resultado['reason'] = 'Función procesada'
+                raise KeyboardInterrupt(resultado['reason'])
+            except Exception as error:
+                resultado['status'] = 'undone'
+                resultado['reason'] = str(error)
+            finally:
+                if resultado['status'] == 'undone':
+                    raise SystemError(resultado['reason'])
+
+                resultado['status'] = 'done'
+                resultado['reason'] = 'Función procesada'
+    except KeyboardInterrupt:
+        resultado['status'] = 'undone'
+        if resultado['reason'] == '':
+            resultado['reason'] = "Interrumpido por el usuario"
+
+        detenido_por_usuario = True
     except Exception as error:
         resultado['status'] = 'undone'
         resultado['reason'] = str(error)
+    finally:
+        if inicio_navegador and not detenido_por_usuario:
+            camino_imagen = (
+                Path("error")
+                / f"{datetime.now().strftime('%d%m%Y%H%M%S')}.png"
+            )
+
+            camino_imagen.parent.mkdir(parents=True, exist_ok=True)
+
+            camino_imagen_str = str(camino_imagen.absolute())
+
+            resultado_capturar_ventana_en_imagen = (
+                capturar_ventana_en_imagen(imagen=camino_imagen_str)
+            )
+            if resultado_capturar_ventana_en_imagen['status'] == 'undone':
+                raise RuntimeError(
+                    resultado_capturar_ventana_en_imagen['reason']
+                )
 
     return resultado
 
