@@ -1,8 +1,10 @@
 from time import sleep
+from pathlib import Path
 
 from py_rpautom.python_utils import coletar_pid, finalizar_processo
 from py_rpautom.web_utils import (
     aguardar_elemento,
+    capturar_janela_em_imagem,
     clicar_elemento,
     coletar_atributo,
     escrever_em_elemento,
@@ -11,6 +13,7 @@ from py_rpautom.web_utils import (
     limpar_campo,
     maximizar_janela,
     selecionar_elemento,
+    trocar_para,
 )
 
 from utils.utils import validar_webdriver
@@ -20,6 +23,63 @@ XPATH = 'xpath'
 CSS_SELECTOR = 'css_selector'
 
 _list_opcion_login = ['CPF', 'AGENCY-ACCOUNT']
+
+
+def acceder_elemento_menu_detran():
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        esperar_loading(salir = True, tiempoLimite = 30)
+
+        resultado_validar_menu_principal = validar_menu_principal()
+        if resultado_validar_menu_principal['status'] == 'undone':
+            resultado['reason'] = (
+                'No apareció el menu principal.'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        resultado_acceder_menu_principal = acceder_menu_principal()
+        if resultado_acceder_menu_principal['status'] == 'undone':
+            resultado['reason'] = (
+                'No fue posible hacer clic en el menu principal.'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        link_detran_selector = (
+            '(//li[@class="titulo "])[4]/following-sibling::li/'
+            '/a[contains(normalize-space(.), "DETRAN")]'
+        )
+        link_detran = aguardar_elemento(
+            identificador=link_detran_selector,
+            tipo_elemento=XPATH,
+            tempo=10,
+        )
+        if not link_detran:
+            resultado['reason'] = (
+                'No apareció el elemento de menu Detran'
+            )
+
+            raise SystemError(resultado['reason'])
+
+        clicar_elemento(
+            seletor=link_detran_selector,
+            tipo_elemento=XPATH,
+        )
+
+        resultado['data'] = True
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
 
 
 def acceder_elemento_menu_saldo_e_extrato():
@@ -212,6 +272,28 @@ def acceder_pagina_login():
         resultado['data'] = resultado_clicar_elemento
         resultado['status'] = 'done'
         resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
+
+
+def capturar_ventana_en_imagen(imagen: str | Path):
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        resultado_capturar_janela_em_imagem = (
+            capturar_janela_em_imagem(imagem=imagen)
+        )
+
+        resultado['data'] = resultado_capturar_janela_em_imagem
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Función procesado'
     except Exception as error:
         resultado['status'] = 'undone'
         resultado['reason'] = str(error)
@@ -416,6 +498,113 @@ def habilitar_campo_valor_extrato():
     except Exception as error:
         resultado['status'] = 'undone'
         resultado['reason'] = str(error)
+    return resultado
+
+
+def hacer_clic_ayuda(cambiar_contexto = False):
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        if cambiar_contexto:
+            trocar_para(
+                id='',
+                tipo='DEFAULT_CONTENT',
+            )
+            sleep(1)
+
+            trocar_para(
+                id=0,
+                tipo='FRAME',
+            )
+
+        link_ayuda_itau_selector ='//div[contains(@class, "btn-ajuda")]/a'
+
+        link_ayuda_itau = aguardar_elemento(
+            identificador=link_ayuda_itau_selector,
+            tipo_elemento=XPATH,
+        )
+        if not link_ayuda_itau:
+            resultado['reason'] = "No apareció la ayuda del sitio"
+
+            raise SystemError(resultado['reason'])
+
+        clicar_elemento(
+            seletor=link_ayuda_itau_selector,
+            tipo_elemento=XPATH,
+        )
+
+        if cambiar_contexto:
+            trocar_para(
+                id='',
+                tipo='DEFAULT_CONTENT',
+            )
+            sleep(1)
+
+        esperar_loading(salir = True, tiempoLimite = 30)
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Função procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
+    return resultado
+
+
+def hacer_clic_logo(cambiar_contexto = False):
+    resultado = {
+        'status': '',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        if cambiar_contexto:
+            trocar_para(
+                id='',
+                tipo='DEFAULT_CONTENT',
+            )
+            sleep(1)
+
+            trocar_para(
+                id=0,
+                tipo='FRAME',
+            )
+
+        link_logo_itau_selector ='//img[@alt="Logo Itaú"]/parent::a'
+        link_logo_itau = aguardar_elemento(
+            identificador=link_logo_itau_selector,
+            tipo_elemento=XPATH,
+        )
+        if not link_logo_itau:
+            resultado['reason'] = "No apareció el logotipo del sitio"
+
+            raise SystemError(resultado['reason'])
+
+        clicar_elemento(
+            seletor=link_logo_itau_selector,
+            tipo_elemento=XPATH,
+        )
+
+        if cambiar_contexto:
+            trocar_para(
+                id='',
+                tipo='DEFAULT_CONTENT',
+            )
+            sleep(1)
+
+        esperar_loading(salir = True, tiempoLimite = 30)
+
+        resultado['status'] = 'done'
+        resultado['reason'] = 'Função procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+        resultado['reason'] = str(error)
+
     return resultado
 
 
