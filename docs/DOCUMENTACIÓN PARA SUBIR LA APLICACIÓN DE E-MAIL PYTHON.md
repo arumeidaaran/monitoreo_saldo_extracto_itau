@@ -70,11 +70,13 @@ Accounts in any organizational directory and personal Microsoft accounts
 Redirect URI:
 
 La plataforma:
+
 ```text
 Web
 ```
 
 Con el valor:
+
 ```text
 http://localhost:8080/callback
 ```
@@ -98,6 +100,7 @@ Dentro de la aplicación ve a:
 ```
 
 Rellene los campos:
+
 ```text
 Descripción:
     Escriba una descripción para este secreto de cliente.
@@ -110,8 +113,8 @@ Haz clic en Guardar.
 
 Guarda el valor.
 
-Es extremadamente importante que guarde estas informaciones creadas, principalmente el "valor". Esto no va aparecer otra vez. 
-No comparta esto con nadie. 
+Es extremadamente importante que guarde estas informaciones creadas, principalmente el "valor". Esto no va aparecer otra vez.
+No comparta esto con nadie.
 
 ---
 
@@ -162,11 +165,9 @@ Al fin y al cabo, la aplicación hace:
 
 1. Obtene acceso con la ayuda del usuario
 2. Obtene Authorization Code
-3. Obtene access token traz Authorization Code 
+3. Obtene access token traz Authorization Code
 4. Renovar token automáticamente con refresh token cuando es necesario
-
 
 ### Importantísimo
 
 Nunca guardes fijos en archivos ni compartes con otros 'client_secret', 'authorization_code', 'access_token' y 'refresh_token'. Usa variables de entorno porque eso equivale a acceso persistente a la cuenta.
-
