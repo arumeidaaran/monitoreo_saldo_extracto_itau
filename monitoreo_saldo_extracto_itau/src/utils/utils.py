@@ -1,4 +1,39 @@
+import re
+
 from py_rpautom.python_utils import processo_existente
+
+
+def crear_contenido_email(
+    contenido_email_html_original: str,
+    texto_contenido_email: str,
+):
+    resultado = {
+        'status': 'done',
+        'reason': '',
+        'data': None
+    }
+
+    try:
+        contenido_email_html = (
+            contenido_email_html_original.replace(
+                'texto_contenido_email',
+                texto_contenido_email,
+            )
+        )
+        contenido_limpio = re.sub(
+            r'\s+', ' ',
+            contenido_email_html
+        ).strip()
+
+        resultado['data'] = contenido_limpio
+        resultado['reason'] = 'Función procesada'
+    except Exception as error:
+        resultado['status'] = 'undone'
+
+        if resultado['reason'] == '':
+            resultado['reason'] = str(error)
+
+    return resultado
 
 
 def validar_webdriver(modo: str, nome_webdriver: str):

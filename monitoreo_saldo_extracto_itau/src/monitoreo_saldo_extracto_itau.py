@@ -6,6 +6,7 @@ import re
 
 from py_rpautom.python_utils import cls
 
+from utils.utils import crear_contenido_email
 from utils.graph_mail_service import (
     definir_contenido_email,
     definir_destinatarios_email,
@@ -31,7 +32,7 @@ from utils.pom import (
 )
 
 
-def ejecutar_flujo():
+def ejecutar_flujo(contenido_email_html_original: str):
     resultado = {
         'status': '',
         'reason': '',
@@ -114,14 +115,6 @@ def ejecutar_flujo():
         destinatarios = definir_destinatarios_email(lista_correos)
         if destinatarios['status'] == 'undone':
             raise RuntimeError(destinatarios['reason'])
-
-        contenido_email_html_original = '''
-            <h1>Hubo modificación en tu cuenta</h1>
-
-            <p>
-            texto_contenido_email
-            </p>
-        '''
 
         titulo_email = 'Correo automático'
 
@@ -295,6 +288,7 @@ def ejecutar_flujo():
                     )
                 ):
                     texto_contenido_email = f'''
+                    <h1>Hubo modificación en tu cuenta</h1>
                     <b>Saldo anterior:</b>
                         {valor_extrato}
                     <br/>
@@ -302,22 +296,19 @@ def ejecutar_flujo():
                         {resultado_colectar_extrato['data']}
                     '''
 
-                    valor_extrato = resultado_colectar_extrato['data']
-
-                    contenido_email_html = (
-                        contenido_email_html_original.replace(
-                            'texto_contenido_email',
-                            texto_contenido_email,
-                        )
+                    contenido_limpio = crear_contenido_email(
+                        contenido_email_html_original,
+                        texto_contenido_email,
                     )
-                    contenido_limpio = re.sub(
-                        r'\s+', ' ',
-                        contenido_email_html
-                    ).strip()
+
+                    if contenido_limpio['status'] == 'undone':
+                        raise RuntimeError(contenido_limpio['reason'])
+
+                    valor_extrato = resultado_colectar_extrato['data']
 
                     body_email = definir_contenido_email(
                         'HTML',
-                        contenido_limpio,
+                        contenido_limpio['data'],
                     )
                     if body_email['status'] == 'undone':
                         raise RuntimeError(body_email['reason'])
@@ -366,20 +357,66 @@ def ejecutar_flujo():
 
             camino_imagen_str = str(camino_imagen.absolute())
 
-            resultado_capturar_ventana_en_imagen = (
-                capturar_ventana_en_imagen(imagen=camino_imagen_str)
-            )
-            if resultado_capturar_ventana_en_imagen['status'] == 'undone':
-                raise RuntimeError(
-                    resultado_capturar_ventana_en_imagen['reason']
+            try:
+                resultado_capturar_ventana_en_imagen = (
+                    capturar_ventana_en_imagen(imagen=camino_imagen_str)
                 )
+                if resultado_capturar_ventana_en_imagen['status'] == 'undone':
+                    raise RuntimeError(
+                        resultado_capturar_ventana_en_imagen['reason']
+                    )
+            except:
+                ...
+
+        texto_contenido_email = f'''
+        <h1>Se finalizó el proceso:</h1>
+        <br/>
+        <br/>
+        <b>Status:</b> {resultado['status']}
+        <br/>
+        <b>Resultado del proceso:</b> {resultado['reason']}
+        '''
+
+        contenido_limpio = crear_contenido_email(
+            contenido_email_html_original,
+            texto_contenido_email,
+        )
+
+        if contenido_limpio['status'] == 'undone':
+            raise RuntimeError(contenido_limpio['reason'])
+
+        body_email = definir_contenido_email(
+            'HTML',
+            contenido_limpio['data'],
+        )
+        if body_email['status'] == 'undone':
+            raise RuntimeError(body_email['reason'])
+
+        resultado_send_mail = send_mail(
+            destinatarios=destinatarios['data'],
+            subject_email=titulo_email,
+            body_email=body_email['data'],
+            client_id=client_id,
+            client_secret=client_secret,
+            attachments=None,
+        )
+        if resultado_send_mail['status'] == 'undone':
+            raise RuntimeError(resultado_send_mail['reason'])
 
     return resultado
 
 
 def main():
-    resultado = ejecutar_flujo()
+    contenido_email_html_original = '''
+        <p>
+        texto_contenido_email
+        </p>
+    '''
+
+    resultado = ejecutar_flujo(contenido_email_html_original)
+
     cls()
+
     print(resultado)
 
 
